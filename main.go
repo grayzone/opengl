@@ -14,6 +14,12 @@ const (
 	height = 512
 )
 
+var (
+	triangle = []float32{
+		0, 0.5, 0, -0.5, -0.5, 0, 0.5, -0.5, 0,
+	}
+)
+
 func initEnv() {
 	runtime.LockOSThread()
 }
@@ -51,12 +57,32 @@ func initOpenGL() uint32 {
 	return prog
 }
 
-func draw(window *glfw.Window, program uint32) {
+func draw(vao uint32, window *glfw.Window, program uint32) {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.UseProgram(program)
 
+	gl.BindVertexArray(vao)
+	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
+
 	glfw.PollEvents()
 	window.SwapBuffers()
+}
+
+func makeVao(points []float32) uint32 {
+	var vbo uint32
+	gl.GenBuffers(1, &vbo)
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+	gl.BufferData(gl.ARRAY_BUFFER, 4*len(points), gl.Ptr(points), gl.STATIC_DRAW)
+
+	var vao uint32
+	gl.GenVertexArrays(1, &vao)
+	gl.BindVertexArray(vao)
+	gl.EnableVertexAttribArray(0)
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
+
+	log.Println("vao:", vao)
+	return vao
 }
 
 func main() {
@@ -66,9 +92,10 @@ func main() {
 	program := initOpenGL()
 	log.Println("program:", program)
 
+	vao := makeVao(triangle)
 	for !window.ShouldClose() {
 
-		draw(window, program)
+		draw(vao, window, program)
 
 	}
 

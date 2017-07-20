@@ -5,6 +5,7 @@ import (
 
 	"log"
 
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
 
@@ -15,15 +16,9 @@ const (
 
 func initEnv() {
 	runtime.LockOSThread()
-	window := initWindow()
-	defer glfw.Terminate()
-
-	for !window.ShouldClose() {
-
-	}
 }
 
-func initWindow() *glfw.Window {
+func initGlfw() *glfw.Window {
 	err := glfw.Init()
 	if err != nil {
 		log.Panic(err)
@@ -43,7 +38,38 @@ func initWindow() *glfw.Window {
 	return window
 }
 
+func initOpenGL() uint32 {
+	err := gl.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+	version := gl.GoStr(gl.GetString(gl.VERSION))
+	log.Println("OpenGL version:", version)
+
+	prog := gl.CreateProgram()
+	gl.LinkProgram(prog)
+	return prog
+}
+
+func draw(window *glfw.Window, program uint32) {
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	gl.UseProgram(program)
+
+	glfw.PollEvents()
+	window.SwapBuffers()
+}
+
 func main() {
 	initEnv()
-	initWindow()
+	window := initGlfw()
+	defer glfw.Terminate()
+	program := initOpenGL()
+	log.Println("program:", program)
+
+	for !window.ShouldClose() {
+
+		draw(window, program)
+
+	}
+
 }
